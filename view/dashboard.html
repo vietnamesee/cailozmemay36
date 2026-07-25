@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - NovaRPC</title>
+    <style>
+        body { background: #0a0a12; color: white; font-family: Arial; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: #1a1a2e; padding: 20px; border-radius: 16px; margin: 10px 0; }
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        button { padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-danger { background: #ed4245; color: white; }
+        .btn-primary { background: #5865f2; color: white; }
+        .btn-primary:hover { background: #4752c4; }
+        a { color: #7289da; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Dashboard</h1>
+            <button class="btn-danger" onclick="logout()">Đăng xuất</button>
+        </div>
+        <div class="card">
+            <h2>📊 Tổng quan</h2>
+            <p id="status">Đang tải...</p>
+        </div>
+        <div class="card">
+            <h2>📌 Quản lý RPC</h2>
+            <a href="/dashboard/rpc">→ Vào RPC Manager</a>
+        </div>
+        <div class="card">
+            <h2>🔑 Token</h2>
+            <p>Bạn đã đăng nhập thành công!</p>
+        </div>
+    </div>
+    <script>
+        async function logout() {
+            await fetch('/api/logout', { method: 'POST' });
+            window.location.href = '/login';
+        }
+        async function loadStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                document.getElementById('status').textContent = '✅ Đang chạy: ' + data.running + '/' + data.total + ' RPC';
+            } catch(e) {
+                document.getElementById('status').textContent = '❌ Lỗi tải status';
+            }
+        }
+        loadStatus();
+    </script>
+</body>
+</html>

