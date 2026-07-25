@@ -17,6 +17,7 @@
         .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         label { font-size: 13px; color: #8a8aa0; display: block; margin-top: 8px; margin-bottom: 4px; }
         .text-muted { color: #6a6a82; font-size: 12px; }
+        .required { color: #ed4245; }
     </style>
 </head>
 <body>
@@ -27,10 +28,14 @@
         <div class="card">
             <h2>➕ Tạo RPC mới</h2>
             
-            <label>🔑 Token Discord *</label>
+            <label>🔑 Token Discord <span class="required">*</span></label>
             <input id="rpcToken" placeholder="Nhập token..." type="password">
             
-            <label>📝 Tên game *</label>
+            <label>📱 App ID <span class="required">*</span></label>
+            <input id="rpcAppId" placeholder="VD: 383226320970055681...">
+            <div class="text-muted">💡 App ID của Visual Studio Code: 383226320970055681 (hỗ trợ URL ảnh)</div>
+            
+            <label>📝 Tên game <span class="required">*</span></label>
             <input id="rpcName" placeholder="VD: Visual Studio Code...">
             
             <label>🎮 Loại</label>
@@ -54,9 +59,9 @@
             
             <div class="row2">
                 <div>
-                    <label>🖼️ Ảnh lớn (URL hoặc Asset Key)</label>
-                    <input id="rpcLargeImage" placeholder="https://i.imgur.com/xxx.gif">
-                    <div class="text-muted">✅ Hỗ trợ URL (Imgur, Pinterest, Discord CDN) hoặc Asset Key</div>
+                    <label>🖼️ Ảnh lớn</label>
+                    <input id="rpcLargeImage" placeholder="https://i.imgur.com/xxx.gif hoặc tên ảnh">
+                    <div class="text-muted">✅ URL (Imgur, Pinterest) hoặc Asset Key</div>
                 </div>
                 <div>
                     <label>Text ảnh lớn</label>
@@ -75,6 +80,7 @@
                 </div>
             </div>
             
+            <!-- BUTTON 1 -->
             <div class="row2">
                 <div>
                     <label>🔗 Button 1 Label</label>
@@ -86,6 +92,7 @@
                 </div>
             </div>
             
+            <!-- BUTTON 2 -->
             <div class="row2">
                 <div>
                     <label>🔗 Button 2 Label</label>
@@ -109,6 +116,7 @@
     <script>
         async function createRpc() {
             const token = document.getElementById('rpcToken').value.trim();
+            const appId = document.getElementById('rpcAppId').value.trim();
             const name = document.getElementById('rpcName').value.trim();
             const type = document.getElementById('rpcType').value;
             const details = document.getElementById('rpcDetails').value.trim();
@@ -123,9 +131,11 @@
             const btn2Url = document.getElementById('rpcBtn2Url').value.trim();
 
             if (!token) return alert('❌ Vui lòng nhập token!');
+            if (!appId) return alert('❌ Vui lòng nhập App ID!');
             if (!name) return alert('❌ Vui lòng nhập tên game!');
 
             const config = {
+                appId,
                 name,
                 type,
                 details,
