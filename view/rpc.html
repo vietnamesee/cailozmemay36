@@ -9,8 +9,6 @@
         input, select { width: 100%; padding: 10px; border-radius: 10px; border: none; background: #2a2a3e; color: white; margin: 5px 0; }
         button { padding: 12px 20px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; }
         .btn-primary { background: #5865f2; color: white; }
-        .btn-success { background: #57f287; color: black; }
-        .btn-danger { background: #ed4245; color: white; }
         a { color: #7289da; text-decoration: none; }
         .rpc-item { background: #2a2a3e; padding: 15px; border-radius: 12px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
         .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
@@ -18,7 +16,7 @@
         .stopped { background: #6a6a82; }
         .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         label { font-size: 13px; color: #8a8aa0; display: block; margin-top: 8px; margin-bottom: 4px; }
-        .btn-danger-sm { background: #ed4245; color: white; padding: 6px 12px; font-size: 13px; border-radius: 8px; border: none; cursor: pointer; }
+        .text-muted { color: #6a6a82; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -57,7 +55,8 @@
             <div class="row2">
                 <div>
                     <label>🖼️ Ảnh lớn (URL hoặc Asset Key)</label>
-                    <input id="rpcLargeImage" placeholder="https://... hoặc tên ảnh">
+                    <input id="rpcLargeImage" placeholder="https://i.imgur.com/xxx.gif">
+                    <div class="text-muted">✅ Hỗ trợ URL (Imgur, Pinterest, Discord CDN) hoặc Asset Key</div>
                 </div>
                 <div>
                     <label>Text ảnh lớn</label>
@@ -76,7 +75,6 @@
                 </div>
             </div>
             
-            <!-- BUTTON 1 -->
             <div class="row2">
                 <div>
                     <label>🔗 Button 1 Label</label>
@@ -88,7 +86,6 @@
                 </div>
             </div>
             
-            <!-- BUTTON 2 -->
             <div class="row2">
                 <div>
                     <label>🔗 Button 2 Label</label>
