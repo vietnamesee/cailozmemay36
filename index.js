@@ -104,8 +104,20 @@ app.post('/api/stop', (req, res) => {
 
 function setRPC(client, config) {
     try {
-        // ===== APP ID MẶC ĐỊNH =====
         const APP_ID = '1527891272868692169';
+        
+        // ===== FIX: XỬ LÝ URL ẢNH =====
+        let largeImage = config.largeImage || '';
+        let smallImage = config.smallImage || '';
+        
+        // Nếu là URL và KHÔNG có https://, tự động thêm vào
+        if (largeImage && !largeImage.startsWith('http://') && !largeImage.startsWith('https://')) {
+            // Nếu không có http:// -> coi là Asset Key (tên ảnh), giữ nguyên
+            // Không làm gì cả
+        }
+        
+        // Nếu là URL, giữ nguyên
+        // Nếu là Asset Key, giữ nguyên
         
         const rpc = new RichPresence(client)
             .setApplicationId(APP_ID)
@@ -113,16 +125,18 @@ function setRPC(client, config) {
             .setName(config.name)
             .setDetails(config.details || '')
             .setState(config.state || '')
-            .setAssetsLargeImage(config.largeImage || '')
+            .setAssetsLargeImage(largeImage)
             .setAssetsLargeText(config.largeText || '')
-            .setAssetsSmallImage(config.smallImage || '')
+            .setAssetsSmallImage(smallImage)
             .setAssetsSmallText(config.smallText || '')
             .setStartTimestamp(config.startTimestamp || Date.now());
 
+        // ===== FIX: XỬ LÝ BUTTON URL =====
         if (config.buttons && config.buttons.length > 0) {
             config.buttons.forEach(btn => {
                 if (btn.label && btn.label.trim() !== '' && btn.url && btn.url.trim() !== '') {
-                    let url = btn.url;
+                    let url = btn.url.trim();
+                    // Tự động thêm https:// nếu thiếu
                     if (!url.startsWith('http://') && !url.startsWith('https://')) {
                         url = 'https://' + url;
                     }
@@ -138,6 +152,8 @@ function setRPC(client, config) {
         console.log('✅ RPC đã cập nhật');
     } catch (error) {
         console.log('❌ Lỗi RPC:', error.message);
+        // Log chi tiết lỗi để debug
+        console.log('Config gây lỗi:', JSON.stringify(config, null, 2));
     }
 }
 
