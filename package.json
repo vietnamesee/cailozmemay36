@@ -1,0 +1,15 @@
+{
+  "name": "novarpc-backend",
+  "version": "1.0.0",
+  "description": "Backend cho NovaRPC - Treo RPC & Voice 24/7",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "discord.js-selfbot-v13": "^3.0.0",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3"
+  }
+}
