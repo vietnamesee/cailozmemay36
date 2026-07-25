@@ -6,7 +6,6 @@ const { Client, RichPresence } = require('discord.js-selfbot-v13');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ===== MIDDLEWARE =====
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('views'));
@@ -18,11 +17,9 @@ app.use(session({
     cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
-// ===== SELFBOT =====
 let rpcClients = {};
 let rpcConfigs = {};
 
-// ===== ROUTES =====
 app.get('/', (req, res) => res.redirect('/login'));
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'views', 'login.html')));
 app.get('/dashboard', (req, res) => {
@@ -34,7 +31,6 @@ app.get('/dashboard/rpc', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'rpc.html'));
 });
 
-// ===== API: ĐĂNG NHẬP =====
 app.post('/api/login', async (req, res) => {
     const { token } = req.body;
     if (!token) return res.status(400).json({ error: 'Thiếu token' });
@@ -69,7 +65,6 @@ app.get('/api/status', (req, res) => {
     });
 });
 
-// ===== API: BẬT RPC =====
 app.post('/api/start', async (req, res) => {
     const { token, config } = req.body;
     if (!token) return res.status(400).json({ error: 'Thiếu token' });
@@ -97,7 +92,6 @@ app.post('/api/start', async (req, res) => {
     }
 });
 
-// ===== API: DỪNG RPC =====
 app.post('/api/stop', (req, res) => {
     const { token } = req.body;
     if (rpcClients[token]) {
@@ -108,10 +102,9 @@ app.post('/api/stop', (req, res) => {
     res.json({ success: true });
 });
 
-// ===== HÀM SET RPC =====
 function setRPC(client, config) {
     try {
-        // App ID mặc định
+        // ===== APP ID MẶC ĐỊNH =====
         const APP_ID = '1527891272868692169';
         
         const rpc = new RichPresence(client)
