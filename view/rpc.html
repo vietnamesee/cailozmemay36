@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>RPC Manager - NovaRPC</title>
+    <title>RPC Manager - Pham Long RPC</title>
     <style>
         body { background: #0a0a12; color: white; font-family: Arial; padding: 20px; }
         .container { max-width: 800px; margin: 0 auto; }
@@ -16,6 +16,9 @@
         .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
         .running { background: #57f287; }
         .stopped { background: #6a6a82; }
+        .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        label { font-size: 13px; color: #8a8aa0; display: block; margin-top: 8px; margin-bottom: 4px; }
+        .btn-danger-sm { background: #ed4245; color: white; padding: 6px 12px; font-size: 13px; border-radius: 8px; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -25,19 +28,79 @@
 
         <div class="card">
             <h2>➕ Tạo RPC mới</h2>
-            <input id="token" placeholder="Token Discord..." type="password">
-            <input id="appId" placeholder="App ID (bắt buộc)...">
-            <input id="name" placeholder="Tên game (bắt buộc)...">
-            <input id="details" placeholder="Details...">
-            <input id="state" placeholder="State...">
-            <input id="largeImage" placeholder="Ảnh lớn (Asset Key)...">
-            <select id="type">
+            
+            <label>🔑 Token Discord *</label>
+            <input id="rpcToken" placeholder="Nhập token..." type="password">
+            
+            <label>📝 Tên game *</label>
+            <input id="rpcName" placeholder="VD: Visual Studio Code...">
+            
+            <label>🎮 Loại</label>
+            <select id="rpcType">
                 <option value="PLAYING">🎮 Playing</option>
                 <option value="STREAMING">📺 Streaming</option>
                 <option value="LISTENING">🎧 Listening</option>
                 <option value="WATCHING">👁️ Watching</option>
             </select>
-            <button class="btn-primary" onclick="startRPC()">▶️ Bật RPC</button>
+            
+            <div class="row2">
+                <div>
+                    <label>Details</label>
+                    <input id="rpcDetails" placeholder="Dòng 1...">
+                </div>
+                <div>
+                    <label>State</label>
+                    <input id="rpcState" placeholder="Dòng 2...">
+                </div>
+            </div>
+            
+            <div class="row2">
+                <div>
+                    <label>🖼️ Ảnh lớn (URL hoặc Asset Key)</label>
+                    <input id="rpcLargeImage" placeholder="https://... hoặc tên ảnh">
+                </div>
+                <div>
+                    <label>Text ảnh lớn</label>
+                    <input id="rpcLargeText" placeholder="Tooltip...">
+                </div>
+            </div>
+            
+            <div class="row2">
+                <div>
+                    <label>🖼️ Ảnh nhỏ</label>
+                    <input id="rpcSmallImage" placeholder="https://... hoặc tên ảnh">
+                </div>
+                <div>
+                    <label>Text ảnh nhỏ</label>
+                    <input id="rpcSmallText" placeholder="Tooltip...">
+                </div>
+            </div>
+            
+            <!-- BUTTON 1 -->
+            <div class="row2">
+                <div>
+                    <label>🔗 Button 1 Label</label>
+                    <input id="rpcBtn1Label" placeholder="Website...">
+                </div>
+                <div>
+                    <label>URL 1</label>
+                    <input id="rpcBtn1Url" placeholder="https://...">
+                </div>
+            </div>
+            
+            <!-- BUTTON 2 -->
+            <div class="row2">
+                <div>
+                    <label>🔗 Button 2 Label</label>
+                    <input id="rpcBtn2Label" placeholder="Discord...">
+                </div>
+                <div>
+                    <label>URL 2</label>
+                    <input id="rpcBtn2Url" placeholder="https://...">
+                </div>
+            </div>
+            
+            <button class="btn-primary" onclick="createRpc()" style="margin-top:12px; width:100%;">▶️ Bật RPC</button>
         </div>
 
         <div class="card">
@@ -47,24 +110,41 @@
     </div>
 
     <script>
-        async function startRPC() {
-            const token = document.getElementById('token').value.trim();
-            const appId = document.getElementById('appId').value.trim();
-            const name = document.getElementById('name').value.trim();
-            if (!token || !appId || !name) {
-                alert('❌ Vui lòng nhập Token, App ID và tên game!');
-                return;
-            }
+        async function createRpc() {
+            const token = document.getElementById('rpcToken').value.trim();
+            const name = document.getElementById('rpcName').value.trim();
+            const type = document.getElementById('rpcType').value;
+            const details = document.getElementById('rpcDetails').value.trim();
+            const state = document.getElementById('rpcState').value.trim();
+            const largeImage = document.getElementById('rpcLargeImage').value.trim();
+            const largeText = document.getElementById('rpcLargeText').value.trim();
+            const smallImage = document.getElementById('rpcSmallImage').value.trim();
+            const smallText = document.getElementById('rpcSmallText').value.trim();
+            const btn1Label = document.getElementById('rpcBtn1Label').value.trim();
+            const btn1Url = document.getElementById('rpcBtn1Url').value.trim();
+            const btn2Label = document.getElementById('rpcBtn2Label').value.trim();
+            const btn2Url = document.getElementById('rpcBtn2Url').value.trim();
+
+            if (!token) return alert('❌ Vui lòng nhập token!');
+            if (!name) return alert('❌ Vui lòng nhập tên game!');
+
             const config = {
-                appId,
                 name,
-                type: document.getElementById('type').value,
-                details: document.getElementById('details').value.trim(),
-                state: document.getElementById('state').value.trim(),
-                largeImage: document.getElementById('largeImage').value.trim(),
+                type,
+                details,
+                state,
+                largeImage,
+                largeText,
+                smallImage,
+                smallText,
                 status: 'online',
-                startTimestamp: Date.now()
+                startTimestamp: Date.now(),
+                buttons: []
             };
+
+            if (btn1Label && btn1Url) config.buttons.push({ label: btn1Label, url: btn1Url });
+            if (btn2Label && btn2Url) config.buttons.push({ label: btn2Label, url: btn2Url });
+
             try {
                 const res = await fetch('/api/start', {
                     method: 'POST',
@@ -73,13 +153,13 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('✅ RPC đã bật!');
+                    alert('✅ RPC đã khởi động!');
                     loadRPCs();
                 } else {
                     alert('❌ Lỗi: ' + data.error);
                 }
-            } catch (e) {
-                alert('❌ Lỗi kết nối: ' + e.message);
+            } catch (error) {
+                alert('❌ Lỗi kết nối: ' + error.message);
             }
         }
 
