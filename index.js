@@ -6,20 +6,23 @@ const { Client, RichPresence } = require('discord.js-selfbot-v13');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ===== MIDDLEWARE =====
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('views'));
 
 app.use(session({
-    secret: 'novarpc_secret_key_2026',
+    secret: 'phamlongrpc_secret_2026',
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
+// ===== SELFBOT =====
 let rpcClients = {};
 let rpcConfigs = {};
 
+// ===== ROUTES =====
 app.get('/', (req, res) => res.redirect('/login'));
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'views', 'login.html')));
 app.get('/dashboard', (req, res) => {
@@ -31,6 +34,7 @@ app.get('/dashboard/rpc', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'rpc.html'));
 });
 
+// ===== API: ĐĂNG NHẬP =====
 app.post('/api/login', async (req, res) => {
     const { token } = req.body;
     if (!token) return res.status(400).json({ error: 'Thiếu token' });
@@ -65,24 +69,35 @@ app.get('/api/status', (req, res) => {
     });
 });
 
+// ===== API: BẬT RPC =====
 app.post('/api/start', async (req, res) => {
     const { token, config } = req.body;
-    if (!token || !config?.appId || !config?.name) {
-        return res.status(400).json({ error: 'Thiếu thông tin' });
+    if (!token) return res.status(400).json({ error: 'Thiếu token' });
+    if (!config?.name) return res.status(400).json({ error: 'Thiếu tên game' });
+
+    if (rpcClients[token] && rpcClients[token].isReady()) {
+        return res.json({ success: true, message: 'RPC đang chạy' });
     }
+
     try {
         const client = new Client();
         rpcClients[token] = client;
         rpcConfigs[token] = config;
-        client.on('ready', () => { console.log('✅ RPC: ' + client.user.tag); setRPC(client, config); });
+
+        client.on('ready', () => {
+            console.log(`✅ RPC: ${client.user.tag}`);
+            setRPC(client, config);
+        });
+
         client.on('error', () => {});
         await client.login(token);
-        res.json({ success: true });
+        res.json({ success: true, message: 'RPC đã khởi động' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
+// ===== API: DỪNG RPC =====
 app.post('/api/stop', (req, res) => {
     const { token } = req.body;
     if (rpcClients[token]) {
@@ -93,10 +108,14 @@ app.post('/api/stop', (req, res) => {
     res.json({ success: true });
 });
 
+// ===== HÀM SET RPC =====
 function setRPC(client, config) {
     try {
+        // App ID mặc định
+        const APP_ID = '1527891272868692169';
+        
         const rpc = new RichPresence(client)
-            .setApplicationId(config.appId)
+            .setApplicationId(APP_ID)
             .setType(config.type || 'PLAYING')
             .setName(config.name)
             .setDetails(config.details || '')
@@ -106,12 +125,29 @@ function setRPC(client, config) {
             .setAssetsSmallImage(config.smallImage || '')
             .setAssetsSmallText(config.smallText || '')
             .setStartTimestamp(config.startTimestamp || Date.now());
-        if (config.buttons) config.buttons.forEach(btn => { if (btn.label && btn.url) rpc.addButton(btn.label, btn.url); });
-        client.user.setPresence({ activities: [rpc], status: config.status || 'online' });
+
+        if (config.buttons && config.buttons.length > 0) {
+            config.buttons.forEach(btn => {
+                if (btn.label && btn.label.trim() !== '' && btn.url && btn.url.trim() !== '') {
+                    let url = btn.url;
+                    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                        url = 'https://' + url;
+                    }
+                    rpc.addButton(btn.label, url);
+                }
+            });
+        }
+
+        client.user.setPresence({
+            activities: [rpc],
+            status: config.status || 'online'
+        });
         console.log('✅ RPC đã cập nhật');
-    } catch (error) { console.log('❌ Lỗi RPC:', error.message); }
+    } catch (error) {
+        console.log('❌ Lỗi RPC:', error.message);
+    }
 }
 
 app.listen(PORT, () => {
-    console.log('🚀 NovaRPC đang chạy tại: http://localhost:' + PORT);
+    console.log(`🚀 Pham Long RPC đang chạy tại: http://localhost:${PORT}`);
 });
