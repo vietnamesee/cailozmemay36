@@ -3,37 +3,108 @@
 <head>
     <title>RPC Manager - Pham Long RPC</title>
     <style>
-        body { background: #0a0a12; color: white; font-family: Arial; padding: 20px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a12;
+            color: white;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            padding: 24px;
+        }
         .container { max-width: 800px; margin: 0 auto; }
-        .card { background: #1a1a2e; padding: 20px; border-radius: 16px; margin: 10px 0; }
-        input, select { width: 100%; padding: 10px; border-radius: 10px; border: none; background: #2a2a3e; color: white; margin: 5px 0; }
-        button { padding: 12px 20px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; }
-        .btn-primary { background: #5865f2; color: white; }
-        a { color: #7289da; text-decoration: none; }
-        .rpc-item { background: #2a2a3e; padding: 15px; border-radius: 12px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
-        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
-        .running { background: #57f287; }
-        .stopped { background: #6a6a82; }
+        .card {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+        .card h2 { font-size: 17px; margin-bottom: 12px; }
+        label {
+            display: block;
+            font-size: 13px;
+            color: #8a8aa0;
+            margin-top: 12px;
+            margin-bottom: 4px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: #2a2a3e;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s;
+        }
+        input:focus, select:focus { border-color: #5865f2; }
+        input::placeholder { color: #6a6a82; }
+        select option { background: #1a1a2e; }
         .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        label { font-size: 13px; color: #8a8aa0; display: block; margin-top: 8px; margin-bottom: 4px; }
-        .text-muted { color: #6a6a82; font-size: 12px; }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-success { background: #57f287; color: black; }
+        .btn-success:hover { background: #3ddb74; }
+        .btn-danger { background: #ed4245; color: white; }
+        .btn-danger:hover { background: #c93538; }
+        .btn-secondary { background: rgba(255,255,255,0.05); color: #d0d0d8; border: 1px solid rgba(255,255,255,0.06); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+        .flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .mt-10 { margin-top: 10px; }
+        .mb-10 { margin-bottom: 10px; }
+        .text-muted { color: #6a6a82; font-size: 13px; }
         .required { color: #ed4245; }
+        .text-success { color: #57f287; }
+        .text-danger { color: #ed4245; }
+        a { color: #7289da; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .token-item {
+            background: rgba(255,255,255,0.02);
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-dot.running { background: #57f287; }
+        .status-dot.stopped { background: #6a6a82; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎮 RPC Manager</h1>
-        <a href="/dashboard">← Dashboard</a>
-
         <div class="card">
-            <h2>➕ Tạo RPC mới</h2>
+            <h1 style="font-size:24px;">🎮 <span style="background:linear-gradient(135deg,#5865f2,#7289da);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">RPC Manager</span></h1>
+            <a href="/dashboard" class="btn btn-secondary" style="padding:6px 16px;font-size:13px;">← Dashboard</a>
+        </div>
+
+        <!-- TẠO RPC -->
+        <div class="card">
+            <h2>➕ Tạo / Bật RPC</h2>
             
             <label>🔑 Token Discord <span class="required">*</span></label>
             <input id="rpcToken" placeholder="Nhập token..." type="password">
             
             <label>📱 App ID <span class="required">*</span></label>
             <input id="rpcAppId" placeholder="VD: 383226320970055681...">
-            <div class="text-muted">💡 App ID của Visual Studio Code: 383226320970055681 (hỗ trợ URL ảnh)</div>
+            <div class="text-muted">💡 VS Code: 383226320970055681 | Discord: 429835274043686912</div>
             
             <label>📝 Tên game <span class="required">*</span></label>
             <input id="rpcName" placeholder="VD: Visual Studio Code...">
@@ -60,8 +131,7 @@
             <div class="row2">
                 <div>
                     <label>🖼️ Ảnh lớn</label>
-                    <input id="rpcLargeImage" placeholder="https://i.imgur.com/xxx.gif hoặc tên ảnh">
-                    <div class="text-muted">✅ URL (Imgur, Pinterest) hoặc Asset Key</div>
+                    <input id="rpcLargeImage" placeholder="https://i.imgur.com/xxx.gif">
                 </div>
                 <div>
                     <label>Text ảnh lớn</label>
@@ -80,7 +150,6 @@
                 </div>
             </div>
             
-            <!-- BUTTON 1 -->
             <div class="row2">
                 <div>
                     <label>🔗 Button 1 Label</label>
@@ -92,7 +161,6 @@
                 </div>
             </div>
             
-            <!-- BUTTON 2 -->
             <div class="row2">
                 <div>
                     <label>🔗 Button 2 Label</label>
@@ -104,12 +172,19 @@
                 </div>
             </div>
             
-            <button class="btn-primary" onclick="createRpc()" style="margin-top:12px; width:100%;">▶️ Bật RPC</button>
+            <div class="flex" style="margin-top:16px;">
+                <button class="btn btn-success" onclick="createRpc()" style="flex:1;">▶️ Bật RPC</button>
+                <button class="btn btn-danger" onclick="stopRpc()" style="flex:1;">⏹ Tắt RPC</button>
+            </div>
+            <div id="rpcResult" class="text-muted mt-10"></div>
         </div>
 
+        <!-- DANH SÁCH RPC -->
         <div class="card">
             <h2>📌 Danh sách RPC</h2>
-            <div id="rpcList">Đang tải...</div>
+            <div id="rpcList">
+                <p class="text-muted">⏳ Đang tải...</p>
+            </div>
         </div>
     </div>
 
@@ -129,10 +204,11 @@
             const btn1Url = document.getElementById('rpcBtn1Url').value.trim();
             const btn2Label = document.getElementById('rpcBtn2Label').value.trim();
             const btn2Url = document.getElementById('rpcBtn2Url').value.trim();
+            const result = document.getElementById('rpcResult');
 
-            if (!token) return alert('❌ Vui lòng nhập token!');
-            if (!appId) return alert('❌ Vui lòng nhập App ID!');
-            if (!name) return alert('❌ Vui lòng nhập tên game!');
+            if (!token) { result.textContent = '❌ Vui lòng nhập token!'; return; }
+            if (!appId) { result.textContent = '❌ Vui lòng nhập App ID!'; return; }
+            if (!name) { result.textContent = '❌ Vui lòng nhập tên game!'; return; }
 
             const config = {
                 appId,
@@ -152,6 +228,7 @@
             if (btn1Label && btn1Url) config.buttons.push({ label: btn1Label, url: btn1Url });
             if (btn2Label && btn2Url) config.buttons.push({ label: btn2Label, url: btn2Url });
 
+            result.textContent = '⏳ Đang khởi động...';
             try {
                 const res = await fetch('/api/start', {
                     method: 'POST',
@@ -160,13 +237,38 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('✅ RPC đã khởi động!');
+                    result.innerHTML = '✅ ' + data.message + ' <span style="color:#57f287;">🟢 Đang chạy</span>';
                     loadRPCs();
                 } else {
-                    alert('❌ Lỗi: ' + data.error);
+                    result.textContent = '❌ ' + data.error;
                 }
-            } catch (error) {
-                alert('❌ Lỗi kết nối: ' + error.message);
+            } catch (e) {
+                result.textContent = '❌ Lỗi kết nối: ' + e.message;
+            }
+        }
+
+        async function stopRpc() {
+            const token = document.getElementById('rpcToken').value.trim();
+            const result = document.getElementById('rpcResult');
+            
+            if (!token) { result.textContent = '❌ Vui lòng nhập token!'; return; }
+            
+            result.textContent = '⏳ Đang tắt...';
+            try {
+                const res = await fetch('/api/stop', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    result.innerHTML = '✅ ' + data.message + ' <span style="color:#6a6a82;">🔴 Đã tắt</span>';
+                    loadRPCs();
+                } else {
+                    result.textContent = '❌ ' + data.error;
+                }
+            } catch (e) {
+                result.textContent = '❌ Lỗi kết nối: ' + e.message;
             }
         }
 
@@ -175,25 +277,46 @@
                 const res = await fetch('/api/status');
                 const data = await res.json();
                 const list = document.getElementById('rpcList');
-                if (data.rpcs.length === 0) {
-                    list.innerHTML = '<p>📭 Chưa có RPC nào</p>';
+                
+                if (!data.rpcs || data.rpcs.length === 0) {
+                    list.innerHTML = '<p class="text-muted">📭 Chưa có RPC nào</p>';
                     return;
                 }
+
                 list.innerHTML = data.rpcs.map(r => `
-                    <div class="rpc-item">
-                        <div>
+                    <div class="token-item">
+                        <div class="info">
                             <span class="status-dot ${r.status === 'running' ? 'running' : 'stopped'}"></span>
                             <strong>${r.name}</strong>
-                            <span style="color: #8a8aa0; font-size: 13px;">${r.token}</span>
+                            <span class="text-muted">${r.token}</span>
+                            <span style="font-size:13px; color: ${r.status === 'running' ? '#57f287' : '#6a6a82'};">
+                                ${r.status === 'running' ? '🟢 Đang chạy' : '🔴 Đã tắt'}
+                            </span>
                         </div>
-                        <span style="color: ${r.status === 'running' ? '#57f287' : '#6a6a82'}; font-size: 13px;">
-                            ${r.status === 'running' ? '🟢 Đang chạy' : '⚫ Đã dừng'}
-                        </span>
+                        <div class="flex">
+                            ${r.status === 'running' ? 
+                                `<button class="btn btn-danger" style="padding:4px 12px;font-size:12px;" onclick="stopRpcByToken('${r.fullToken}')">⏹ Tắt</button>` :
+                                `<span style="color:#6a6a82;font-size:13px;">⏸️ Đã dừng</span>`
+                            }
+                        </div>
                     </div>
                 `).join('');
             } catch(e) {
-                document.getElementById('rpcList').textContent = '❌ Lỗi tải danh sách';
+                document.getElementById('rpcList').innerHTML = '<p class="text-muted">❌ Lỗi tải danh sách</p>';
             }
+        }
+
+        async function stopRpcByToken(token) {
+            if (!confirm('Tắt RPC này?')) return;
+            try {
+                await fetch('/api/stop', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                loadRPCs();
+                document.getElementById('rpcResult').innerHTML = '✅ Đã tắt RPC <span style="color:#6a6a82;">🔴</span>';
+            } catch(e) {}
         }
 
         loadRPCs();
