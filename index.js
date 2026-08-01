@@ -51,6 +51,26 @@ app.post('/api/logout', (req, res) => {
     res.json({ success: true });
 });
 
+app.get('/api/tokens', (req, res) => {
+    const tokenList = Object.keys(rpcClients).map(token => ({
+        token: token.slice(0, 15) + '...',
+        fullToken: token,
+        tag: rpcClients[token]?.user?.tag || 'Đang kết nối...',
+        isReady: rpcClients[token]?.isReady() || false
+    }));
+    res.json({ tokens: tokenList, total: tokenList.length });
+});
+
+app.post('/api/stop-token', (req, res) => {
+    const { token } = req.body;
+    if (rpcClients[token]) {
+        rpcClients[token].destroy();
+        delete rpcClients[token];
+        delete rpcConfigs[token];
+    }
+    res.json({ success: true });
+});
+
 app.get('/api/status', (req, res) => {
     const tokens = Object.keys(rpcClients);
     const running = tokens.filter(t => rpcClients[t]?.isReady());
@@ -103,31 +123,53 @@ app.post('/api/stop', (req, res) => {
     res.json({ success: true });
 });
 
+// ===== SET RPC (FIX URL + BUTTON) =====
 function setRPC(client, config) {
     try {
+        // ===== FIX: XỬ LÝ URL ẢNH =====
+        let largeImage = config.largeImage || '';
+        let smallImage = config.smallImage || '';
+        
+        // Nếu là URL không có https://, tự động thêm
+        if (largeImage && !largeImage.startsWith('http://') && !largeImage.startsWith('https://')) {
+            // Nếu không có http://, coi là Asset Key (giữ nguyên)
+            // Không thay đổi
+        }
+        
+        // ===== FIX: XỬ LÝ BUTTON =====
+        let buttons = [];
+        if (config.buttons && config.buttons.length > 0) {
+            buttons = config.buttons.filter(btn => {
+                // Chỉ giữ button có cả label và url hợp lệ
+                if (!btn.label || btn.label.trim() === '') return false;
+                if (!btn.url || btn.url.trim() === '') return false;
+                return true;
+            }).map(btn => {
+                let url = btn.url.trim();
+                // Tự động thêm https:// nếu thiếu
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'https://' + url;
+                }
+                return { label: btn.label.trim(), url };
+            });
+        }
+
         const rpc = new RichPresence(client)
             .setApplicationId(config.appId)
             .setType(config.type || 'PLAYING')
             .setName(config.name)
             .setDetails(config.details || '')
             .setState(config.state || '')
-            .setAssetsLargeImage(config.largeImage || '')
+            .setAssetsLargeImage(largeImage)
             .setAssetsLargeText(config.largeText || '')
-            .setAssetsSmallImage(config.smallImage || '')
+            .setAssetsSmallImage(smallImage)
             .setAssetsSmallText(config.smallText || '')
             .setStartTimestamp(config.startTimestamp || Date.now());
 
-        if (config.buttons && config.buttons.length > 0) {
-            config.buttons.forEach(btn => {
-                if (btn.label && btn.label.trim() !== '' && btn.url && btn.url.trim() !== '') {
-                    let url = btn.url.trim();
-                    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                        url = 'https://' + url;
-                    }
-                    rpc.addButton(btn.label, url);
-                }
-            });
-        }
+        // Thêm button (đã được fix)
+        buttons.forEach(btn => {
+            rpc.addButton(btn.label, btn.url);
+        });
 
         client.user.setPresence({
             activities: [rpc],
@@ -136,6 +178,7 @@ function setRPC(client, config) {
         console.log('✅ RPC đã cập nhật');
     } catch (error) {
         console.log('❌ Lỗi RPC:', error.message);
+        console.log('📋 Config:', JSON.stringify(config, null, 2));
     }
 }
 
