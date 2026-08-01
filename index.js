@@ -2,6 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const { Client, RichPresence } = require('discord.js-selfbot-v13');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,9 +18,12 @@ app.use(session({
     cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
+// ===== LƯU TRỮ CLIENT =====
 let rpcClients = {};
 let rpcConfigs = {};
+let rpcIntervals = {};
 
+// ===== ROUTES =====
 app.get('/', (req, res) => res.redirect('/login'));
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'views', 'login.html')));
 app.get('/dashboard', (req, res) => {
@@ -31,6 +35,7 @@ app.get('/dashboard/rpc', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'rpc.html'));
 });
 
+// ===== API: LOGIN =====
 app.post('/api/login', async (req, res) => {
     const { token } = req.body;
     if (!token) return res.status(400).json({ error: 'Thiếu token' });
@@ -51,6 +56,7 @@ app.post('/api/logout', (req, res) => {
     res.json({ success: true });
 });
 
+// ===== API: LẤY DANH SÁCH TOKEN =====
 app.get('/api/tokens', (req, res) => {
     const tokenList = Object.keys(rpcClients).map(token => ({
         token: token.slice(0, 15) + '...',
@@ -61,9 +67,15 @@ app.get('/api/tokens', (req, res) => {
     res.json({ tokens: tokenList, total: tokenList.length });
 });
 
+// ===== API: DỪNG TOKEN =====
 app.post('/api/stop-token', (req, res) => {
     const { token } = req.body;
     if (rpcClients[token]) {
+        // Xóa interval
+        if (rpcIntervals[token]) {
+            clearInterval(rpcIntervals[token]);
+            delete rpcIntervals[token];
+        }
         rpcClients[token].destroy();
         delete rpcClients[token];
         delete rpcConfigs[token];
@@ -71,6 +83,7 @@ app.post('/api/stop-token', (req, res) => {
     res.json({ success: true });
 });
 
+// ===== API: LẤY STATUS =====
 app.get('/api/status', (req, res) => {
     const tokens = Object.keys(rpcClients);
     const running = tokens.filter(t => rpcClients[t]?.isReady());
@@ -79,20 +92,33 @@ app.get('/api/status', (req, res) => {
         running: running.length,
         rpcs: tokens.map(token => ({
             token: token.slice(0, 10) + '...',
+            fullToken: token,
             name: rpcConfigs[token]?.name || 'Chưa đặt tên',
-            status: rpcClients[token]?.isReady() ? 'running' : 'stopped'
+            status: rpcClients[token]?.isReady() ? 'running' : 'stopped',
+            isReady: rpcClients[token]?.isReady() || false
         }))
     });
 });
 
+// ===== API: BẬT RPC =====
 app.post('/api/start', async (req, res) => {
     const { token, config } = req.body;
     if (!token) return res.status(400).json({ error: 'Thiếu token' });
     if (!config?.appId) return res.status(400).json({ error: 'Thiếu App ID' });
     if (!config?.name) return res.status(400).json({ error: 'Thiếu tên game' });
 
+    // Nếu token đã chạy, dừng trước khi chạy mới
     if (rpcClients[token] && rpcClients[token].isReady()) {
-        return res.json({ success: true, message: 'RPC đang chạy' });
+        // Dừng client cũ
+        if (rpcIntervals[token]) {
+            clearInterval(rpcIntervals[token]);
+            delete rpcIntervals[token];
+        }
+        rpcClients[token].destroy();
+        delete rpcClients[token];
+        delete rpcConfigs[token];
+        // Đợi 1s rồi chạy lại
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     try {
@@ -102,10 +128,13 @@ app.post('/api/start', async (req, res) => {
 
         client.on('ready', () => {
             console.log(`✅ RPC: ${client.user.tag}`);
-            setRPC(client, config);
+            setRPC(client, token);
         });
 
-        client.on('error', () => {});
+        client.on('error', (err) => {
+            console.log(`❌ Lỗi: ${err.message}`);
+        });
+
         await client.login(token);
         res.json({ success: true, message: 'RPC đã khởi động' });
     } catch (error) {
@@ -113,73 +142,90 @@ app.post('/api/start', async (req, res) => {
     }
 });
 
+// ===== API: TẮT RPC =====
 app.post('/api/stop', (req, res) => {
     const { token } = req.body;
     if (rpcClients[token]) {
+        if (rpcIntervals[token]) {
+            clearInterval(rpcIntervals[token]);
+            delete rpcIntervals[token];
+        }
         rpcClients[token].destroy();
         delete rpcClients[token];
         delete rpcConfigs[token];
     }
-    res.json({ success: true });
+    res.json({ success: true, message: 'Đã tắt RPC' });
 });
 
-// ===== SET RPC (FIX URL + BUTTON) =====
-function setRPC(client, config) {
-    try {
-        // ===== FIX: XỬ LÝ URL ẢNH =====
-        let largeImage = config.largeImage || '';
-        let smallImage = config.smallImage || '';
-        
-        // Nếu là URL không có https://, tự động thêm
-        if (largeImage && !largeImage.startsWith('http://') && !largeImage.startsWith('https://')) {
-            // Nếu không có http://, coi là Asset Key (giữ nguyên)
-            // Không thay đổi
-        }
-        
-        // ===== FIX: XỬ LÝ BUTTON =====
-        let buttons = [];
-        if (config.buttons && config.buttons.length > 0) {
-            buttons = config.buttons.filter(btn => {
-                // Chỉ giữ button có cả label và url hợp lệ
-                if (!btn.label || btn.label.trim() === '') return false;
-                if (!btn.url || btn.url.trim() === '') return false;
-                return true;
-            }).map(btn => {
-                let url = btn.url.trim();
-                // Tự động thêm https:// nếu thiếu
-                if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                    url = 'https://' + url;
-                }
-                return { label: btn.label.trim(), url };
-            });
-        }
+// ===== HÀM SET RPC =====
+function setRPC(client, token) {
+    let statusIndex = 0;
+    const config = rpcConfigs[token];
+    const STATUS_LIST = [
+        config.details || 'Pham Long RPC',
+        config.state || '14/12/2012',
+        "💙 zyo.lol/qdk",
+    ];
 
-        const rpc = new RichPresence(client)
-            .setApplicationId(config.appId)
-            .setType(config.type || 'PLAYING')
-            .setName(config.name)
-            .setDetails(config.details || '')
-            .setState(config.state || '')
-            .setAssetsLargeImage(largeImage)
-            .setAssetsLargeText(config.largeText || '')
-            .setAssetsSmallImage(smallImage)
-            .setAssetsSmallText(config.smallText || '')
-            .setStartTimestamp(config.startTimestamp || Date.now());
-
-        // Thêm button (đã được fix)
-        buttons.forEach(btn => {
-            rpc.addButton(btn.label, btn.url);
-        });
-
-        client.user.setPresence({
-            activities: [rpc],
-            status: config.status || 'online'
-        });
-        console.log('✅ RPC đã cập nhật');
-    } catch (error) {
-        console.log('❌ Lỗi RPC:', error.message);
-        console.log('📋 Config:', JSON.stringify(config, null, 2));
+    // Xóa interval cũ nếu có
+    if (rpcIntervals[token]) {
+        clearInterval(rpcIntervals[token]);
+        delete rpcIntervals[token];
     }
+
+    const updatePresence = () => {
+        try {
+            if (!client || !client.isReady()) {
+                console.log(`⚠️ Client không sẵn sàng, bỏ qua update`);
+                return;
+            }
+
+            const rpc = new RichPresence(client)
+                .setApplicationId(config.appId)
+                .setType(config.type || 'PLAYING')
+                .setName(config.name)
+                .setDetails(STATUS_LIST[statusIndex % STATUS_LIST.length])
+                .setState(config.state || '')
+                .setAssetsLargeImage(config.largeImage || '')
+                .setAssetsLargeText(config.largeText || '')
+                .setAssetsSmallImage(config.smallImage || '')
+                .setAssetsSmallText(config.smallText || '')
+                .setStartTimestamp(config.startTimestamp || Date.now());
+
+            // Xử lý button
+            if (config.buttons && config.buttons.length > 0) {
+                config.buttons.forEach(btn => {
+                    if (btn.label && btn.label.trim() !== '' && btn.url && btn.url.trim() !== '') {
+                        let url = btn.url.trim();
+                        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                            url = 'https://' + url;
+                        }
+                        try {
+                            rpc.addButton(btn.label, url);
+                        } catch (e) {
+                            console.log(`⚠️ Lỗi button: ${e.message}`);
+                        }
+                    }
+                });
+            }
+
+            client.user.setPresence({
+                activities: [rpc],
+                status: config.status || 'online'
+            });
+            
+            console.log(`   📌 ${config.name}: ${STATUS_LIST[statusIndex % STATUS_LIST.length]}`);
+            statusIndex++;
+        } catch (error) {
+            console.log(`   ❌ Lỗi RPC: ${error.message}`);
+        }
+    };
+
+    // Update ngay
+    setTimeout(updatePresence, 2000);
+    
+    // Update theo interval
+    rpcIntervals[token] = setInterval(updatePresence, 5000);
 }
 
 app.listen(PORT, () => {
